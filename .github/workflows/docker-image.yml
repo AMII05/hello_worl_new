@@ -35,5 +35,27 @@ jobs:
           registry: amitabiswas05/argo_cicd
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          
+      - name: Login to GCR
+        env:
+          PROJECT_ID: anthos-poc-368601 #create env called PROJECT_ID consisted of our actual GCP Project ID
+        uses: google-github-actions/setup-gcloud@v0.3.0 #checkouts GCR repo, so this workflow can access it
+        with:
+          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }} #parse the value of repository secret called SERVICE_ACCOUNT_KEY that we have created earlier
+          project_id: ${{ env.PROJECT_ID }} #parse the value of env called PROJECT_ID
+          export_default_credentials: true
+          
+      - name: Configure Docker Client
+        run:  |-
+          gcloud auth configure-docker --quiet #authenticate to gcr
+        
+      - name: Push Docker Image to Container Registry GCR
+        env: 
+          IMAGE_NAME: nginx_app
+          PROJECT_ID: anthos-poc-368601
+        #tag docker image to gcr image format then push to gcr
+        run: |-
+          docker tag $IMAGE_NAME:latest gcr.io/$PROJECT_ID/$IMAGE_NAME:latest 
+          docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:latest
 #     - name: Build the Docker image
 #       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
