@@ -45,13 +45,19 @@ jobs:
           project_id: ${{ env.PROJECT_ID }} #parse the value of env called PROJECT_ID
           export_default_credentials: true
           
+      - name: Build Docker Image
+        env:
+          IMAGE_NAME: argocdtest_app #create env called IMAGE_NAME consisted of actual name of Docker Image after we build
+          PROJECT_ID: anthos-poc-368601
+        run: docker build -t $IMAGE_NAME:latest . #build the docker image
+        
       - name: Configure Docker Client
         run:  |-
           gcloud auth configure-docker --quiet #authenticate to gcr
         
       - name: Push Docker Image to Container Registry GCR
         env: 
-          IMAGE_NAME: amitabiswas05/argo_cicd:tagname
+          IMAGE_NAME: argocdtest_app
           PROJECT_ID: anthos-poc-368601
         #tag docker image to gcr image format then push to gcr
         run: |-
