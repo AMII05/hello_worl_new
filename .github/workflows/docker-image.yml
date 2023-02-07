@@ -51,7 +51,7 @@ jobs:
         
       - name: Push Docker Image to Container Registry GCR
         env: 
-          IMAGE_NAME: nginx_app
+          IMAGE_NAME: amitabiswas05/argo_cicd:tagname
           PROJECT_ID: anthos-poc-368601
         #tag docker image to gcr image format then push to gcr
         run: |-
