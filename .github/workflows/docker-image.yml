@@ -18,6 +18,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
         with:
+          registry: amitabiswas05/argo_cicd
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
@@ -32,6 +33,7 @@ jobs:
         with:
           context: .
           push: true
+          registry: amitabiswas05/argo_cicd
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 #     - name: Build the Docker image
