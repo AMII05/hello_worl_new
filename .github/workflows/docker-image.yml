@@ -36,33 +36,45 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           
-      - name: Login to GCR
-        env:
-          PROJECT_ID: anthos-poc-368601 #create env called PROJECT_ID consisted of our actual GCP Project ID
-        uses: google-github-actions/setup-gcloud@v0.3.0 #checkouts GCR repo, so this workflow can access it
-        with:
-          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }} #parse the value of repository secret called SERVICE_ACCOUNT_KEY that we have created earlier
-          project_id: ${{ env.PROJECT_ID }} #parse the value of env called PROJECT_ID
-          export_default_credentials: true
-          
-      - name: Build Docker Image
-        env:
-          IMAGE_NAME: bank-of-anthos #create env called IMAGE_NAME consisted of actual name of Docker Image after we build
-          PROJECT_ID: anthos-poc-368601
-        run: docker build -t $IMAGE_NAME:latest . #build the docker image
-        
-      - name: Configure Docker Client
-        run:  |-
-          gcloud auth configure-docker --quiet #authenticate to gcr
-        
-      - name: Push Docker Image to Container Registry GCR
-        env: 
-          IMAGE_NAME: bank-of-anthos
-          PROJECT_ID: anthos-poc-368601
-        #tag docker image to gcr image format then push to gcr
+      # Set up kustomize
+      - name: Set up Kustomize
+        uses: amitabiswas05/setup-kustomize@v1
+
+      # Deploy the Docker image to the GKE cluster
+      - name: Deploy
         run: |-
-          gcloud auth configure-docker -q
-          docker tag $IMAGE_NAME:latest australia-southeast1-docker.pkg.dev/anthos-poc-368601/gke-cloud-sql-repo/$IMAGE_NAME:latest 
-          docker push australia-southeast1-docker.pkg.dev/anthos-poc-368601/gke-cloud-sql-repo/$IMAGE_NAME:latest
-#     - name: Build the Docker image
-#       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+          kustomize edit set image gcr.io/PROJECT_ID/IMAGE=gcr.io/$PROJECT_ID/$IMAGE:${GITHUB_REF#refs/heads/}-$GITHUB_SHA
+          kustomize build . | kubectl apply -f -
+          kubectl rollout status deployment $IMAGE
+          kubectl get services -o wide
+          
+      #- name: Login to GCR
+      #  env:
+      #    PROJECT_ID: anthos-poc-368601 #create env called PROJECT_ID consisted of our actual GCP Project ID
+      #  uses: google-github-actions/setup-gcloud@v0.3.0 #checkouts GCR repo, so this workflow can access it
+      #  with:
+      #    service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }} #parse the value of repository secret called SERVICE_ACCOUNT_KEY that we have created earlier
+      #    project_id: ${{ env.PROJECT_ID }} #parse the value of env called PROJECT_ID
+      #    export_default_credentials: true
+          
+      #- name: Build Docker Image
+      #  env:
+      #    IMAGE_NAME: bank-of-anthos #create env called IMAGE_NAME consisted of actual name of Docker Image after we build
+      #    PROJECT_ID: anthos-poc-368601
+      #  run: docker build -t $IMAGE_NAME:latest . #build the docker image
+        
+      #- name: Configure Docker Client
+      #  run:  |-
+      #    gcloud auth configure-docker --quiet #authenticate to gcr
+        
+      #- name: Push Docker Image to Container Registry GCR
+      #  env: 
+      #    IMAGE_NAME: bank-of-anthos
+      #    PROJECT_ID: anthos-poc-368601
+        #tag docker image to gcr image format then push to gcr
+      #  run: |-
+      #    gcloud auth configure-docker -q
+      #    docker tag $IMAGE_NAME:latest australia-southeast1-docker.pkg.dev/anthos-poc-368601/gke-cloud-sql-repo/$IMAGE_NAME:latest 
+      #    docker push australia-southeast1-docker.pkg.dev/anthos-poc-368601/gke-cloud-sql-repo/$IMAGE_NAME:latest
+#     #- name: Build the Docker image
+#     #  run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
