@@ -41,11 +41,20 @@ jobs:
         run: |-
          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
          chmod u+x ./kustomize
-
+         
+      - name: Login to GCR
+        env:
+          PROJECT_ID: anthos-poc-368601 #create env called PROJECT_ID consisted of our actual GCP Project ID
+        uses: google-github-actions/setup-gcloud@v0.3.0 #checkouts GCR repo, so this workflow can access it
+        with:
+          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }} #parse the value of repository secret called SERVICE_ACCOUNT_KEY that we have created earlier
+          project_id: ${{ env.PROJECT_ID }} #parse the value of env called PROJECT_ID
+          export_default_credentials: true
+          
       # Deploy the Docker image to the GKE cluster
       - name: Deploy
         run: |-
-          kustomize edit set image gcr.io/PROJECT_ID/IMAGE=gcr.io/$PROJECT_ID/$IMAGE:${GITHUB_REF#refs/heads/}-$GITHUB_SHA
+          kustomize edit set image amitabiswas05/argo_cicd
           kustomize build . | kubectl apply -f -
           kubectl rollout status deployment $IMAGE
           kubectl get services -o wide
